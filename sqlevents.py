@@ -44,14 +44,32 @@ COLUMNS = {
 
 
 class EventsDatabase(object):
-    """Used to generate an events database for a specific experiment."""
+    """SQL representation of events for a specific experiment.
+
+    This supports combining multiple sessions of the same experiment type but
+    will fail if trying to combine incompatible experiments.
+
+    Parameters
+    ----------
+    exp_type : str
+        Experiment type (e.g., ``'FR1'``)
+    engine : sa.Engine
+        SQLAlchemy engine object
+
+    Keyword arguments
+    -----------------
+    meta : sa.MetaData
+    debug : bool
+
+    """
     __allowed_experiments = ['FR1']
 
-    def __init__(self, exp_type, engine, meta=None):
+    def __init__(self, exp_type, engine, meta=None, debug=False):
         assert exp_type in self.__allowed_experiments
         self.exp_type = exp_type
         self.engine = engine
         self.meta = meta or sa.MetaData()
+        self._debug = debug
 
         self._tables = {
             "events": self._make_events_table()
@@ -82,11 +100,18 @@ class EventsDatabase(object):
         self.meta.create_all(bind=self.engine)
 
     def from_json(self, path):
-        """Convert from JSON events to SQL events."""
+        """Convert from JSON events to SQL events.
+
+        Parameters
+        ----------
+        path : str
+            Path to JSON event file to convert.
+
+        """
         columns = [c.name for c in self.events.columns if c.name != 'id']
         df = pd.read_json(path)[columns]
         assert df.experiment[0] == self.exp_type
-        if False:  # for debugging
+        if self._debug:
             for n in df.index:
                 try:
                     df[df.index == n].to_sql('events', self.engine, if_exists='append', index=False)
