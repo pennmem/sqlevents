@@ -62,7 +62,7 @@ class EventsDatabase(object):
     debug : bool
 
     """
-    __allowed_experiments = ['FR1']
+    __allowed_experiments = ['FR1', 'catFR1']
 
     def __init__(self, exp_type, engine, meta=None, debug=False):
         assert exp_type in self.__allowed_experiments
@@ -89,6 +89,8 @@ class EventsDatabase(object):
     def _make_events_table(self):
         if self.exp_type.startswith("FR"):
             columns = COLUMNS['common'] + COLUMNS['FR']
+        elif self.exp_type.startswith("catFR"):
+            columns = COLUMNS['common'] + COLUMNS['FR'] + COLUMNS['catFR']
 
         try:
             return Table("events", self.meta, *columns)
@@ -110,7 +112,7 @@ class EventsDatabase(object):
         """
         columns = [c.name for c in self.events.columns if c.name != 'id']
         df = pd.read_json(path)[columns]
-        assert df.experiment[0] == self.exp_type
+        assert df.experiment[0].lower() == self.exp_type.lower()
         if self._debug:
             for n in df.index:
                 try:
@@ -124,13 +126,13 @@ class EventsDatabase(object):
 
 if __name__ == "__main__":
     # Create empty table with SQLAlchemy
-    engine = sa.create_engine('sqlite:///fr1.sqlite')
+    engine = sa.create_engine('sqlite:///events.sqlite')
 
-    with EventsDatabase('FR1', engine) as db:
+    with EventsDatabase('catFR1', engine) as db:
         db.create()
 
         # Convert existing JSON events to SQL
-        json_file = osp.expanduser('~/mnt/rhino/protocols/r1/subjects/R1297T/experiments/FR1/sessions/0/behavioral/current_processed/all_events.json')
+        json_file = osp.expanduser('~/mnt/rhino/protocols/r1/subjects/R1227T/experiments/catFR1/sessions/0/behavioral/current_processed/all_events.json')
         db.from_json(json_file)
 
     print('Easy mode: read events directly with pandas')
