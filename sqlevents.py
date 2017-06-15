@@ -39,7 +39,29 @@ COLUMNS = {
     "catFR": [
         Column('category', String),
         Column('category_num', Integer)
-    ]
+    ],
+
+    # PAL-specific columns
+    "PAL": [
+        Column('resp_word', String(64)),
+        Column('probe_word', String(64)),
+        Column('probepos', Integer),
+        Column('cue_direction', Integer),
+        Column('is_stim', Integer),
+        Column('resp_pass', Integer),
+        Column('RT', Integer),
+        Column('rectime', Integer),  # FIXME: same as above?
+        Column('serialpos', Integer),
+        Column('stim_list', Integer),
+        Column('correct', Integer),
+        Column('study_1', String(64)),
+        Column('study_2', String(64)),
+        Column('vocalization', Integer),
+        Column('stim_type', String(64)),
+        Column('intrusion', Integer),
+        Column('list', Integer),
+        Column('expecting_word', String(64))
+    ],
 }
 
 
@@ -62,7 +84,7 @@ class EventsDatabase(object):
     debug : bool
 
     """
-    __allowed_experiments = ['FR1', 'catFR1']
+    __allowed_experiments = ['FR1', 'catFR1', 'PAL1']
 
     def __init__(self, exp_type, engine, meta=None, debug=False):
         assert exp_type in self.__allowed_experiments
@@ -91,6 +113,8 @@ class EventsDatabase(object):
             columns = COLUMNS['common'] + COLUMNS['FR']
         elif self.exp_type.startswith("catFR"):
             columns = COLUMNS['common'] + COLUMNS['FR'] + COLUMNS['catFR']
+        elif self.exp_type.startswith("PAL"):
+            columns = COLUMNS['common'] + COLUMNS['PAL']
 
         try:
             return Table("events", self.meta, *columns)
@@ -128,11 +152,11 @@ if __name__ == "__main__":
     # Create empty table with SQLAlchemy
     engine = sa.create_engine('sqlite:///events.sqlite')
 
-    with EventsDatabase('catFR1', engine) as db:
+    with EventsDatabase('PAL1', engine) as db:
         db.create()
 
         # Convert existing JSON events to SQL
-        json_file = osp.expanduser('~/mnt/rhino/protocols/r1/subjects/R1227T/experiments/catFR1/sessions/0/behavioral/current_processed/all_events.json')
+        json_file = osp.expanduser('~/mnt/rhino/protocols/r1/subjects/R1111M/experiments/PAL1/sessions/0/behavioral/current_processed/all_events.json')
         db.from_json(json_file)
 
     print('Easy mode: read events directly with pandas')
